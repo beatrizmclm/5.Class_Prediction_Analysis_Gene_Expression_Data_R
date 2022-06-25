@@ -1,0 +1,193 @@
+---
+title: "Class Prediction Analysis for Gene Expression Data"
+author: "Beatriz Manso"
+date: '2022-04-20'
+output: 
+  distill::distill_article:
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    number_sections: true
+    code_folding: false
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+For each sample that is provided with this package, it becomes possible
+to predict which class it belongs to using a multivariate predictor. In
+addition to Compound Covariate Predictor, Diagonal Linear Discriminant
+Analysis, Nearest Neighbor Predictor, Nearest Centroid Predictor, and
+Support Vector Machine Predictor, there are many other multivariate
+classification methods. A graphical representation of how accurately
+this multivariate class predictor can determine all class predictions
+requested is provided in this package.
+
+The complete evaluation of the process is carried out by using
+cross-validation methods including leave-one-out cross-validation,
+k-fold validation, and bootstrap validation with 0.632+. Each
+classifier's performance is examined along with a cross-validated
+estimate of misclassification rate. The full dataset can be used to
+classify new samples based on specific predictors and multivariate
+predictors.
+
+# Methods
+
+Set working directory:
+
+```{r}
+setwd("C:/Users/manso/OneDrive - University of West London/MSc Bioinformatics - UWL/6.BGA - Bioinformatics and Genome Analysis/week 5 - Microarray analysis/practical")
+```
+
+Install packages and load libraries:
+
+```{r}
+if (!require("BiocManager", quietly = TRUE))
+ install.packages("BiocManager")
+BiocManager::install("ROC")
+
+#Class prediction package
+install.packages("https://brb.nci.nih.gov/BRB-ArrayTools/RPackagesAndManuals/classpredict_0.2.tar.gz", repos = NULL, type="source")
+
+library(classpredict)
+
+
+```
+
+## 1. Get Built-in sample data - Cancer data
+
+Expression data:
+
+```{r}
+dataset <- "Brca"
+
+x <- read.delim(system.file("extdata", paste0(dataset, "_LOGRAT.TXT"), package = "classpredict"), header = FALSE)
+
+head(x)
+```
+
+## 2. Class Information
+
+```{r}
+expdesign <- read.delim(system.file("extdata", paste0(dataset, "_EXPDESIGN.txt"), package = "classpredict"), as.is = TRUE)
+
+head(expdesign)
+
+```
+
+## 3. Class Prediction Analysis
+
+The "classPredict" function calculates multiple classifiers that are
+used to predict the class of a new sample, implementing the class
+prediction tool with multiple methods in BRB-ArrayTools. This package
+provides test.classPrediction for a quick start of class prediction
+analysis over one of the built-in sample data (i.e., "Brca", "Perou",
+and "Pomeroy").
+
+```{r}
+res1 <- test.classPredict('Brca', outputName = "ClassPrediction_Brca", 
+generateHTML = TRUE)
+
+## Getting analysis results ...
+res2 <- test.classPredict('Pomeroy', outputName = "ClassPrediction_Pomeroy", 
+generateHTML = TRUE)
+
+## Getting analysis results ...
+res3 <- test.classPredict('Perou', outputName = "ClassPrediction_Brca", 
+generateHTML = TRUE)
+
+
+```
+
+## 4. List Objects In The Results
+
+```{r}
+names(res1)
+names(res2)
+names(res3)
+```
+
+### Explanation about each object:
+
+**res\$performClass** is a data frame with the performance of
+classifiers during cross-validation:
+
+```{r}
+res1$performClass[1:11,]
+```
+
+**res\$percentCorrectClass** is a data frame with the mean percent of
+correct classification for each sample using different prediction
+methods:
+
+```{r}
+res1$percentCorrectClass
+```
+
+-   "ccp": Compound Covariate Predictor
+-   "bcc": Bayesian Compound Covariate Predictor
+-   "dlda": Diagonal Linear Discriminant Analysis
+-   "knn": 1-Nearest Neighbor/ 3-Nearest Neighbor
+-   "nc": Nearest Centroid
+-   "svm": Support Vector Machine
+
+**res\$predNewSamples** is a data frame with predicted class for each
+new sample. NC means that a sample is not classified. In this example,
+there are four new samples:
+
+```{r}
+res1$predNewSamples[1:4,]
+
+```
+
+**res\$probNew** is a data frame with the predicted probability of each
+new sample belonging to the class (BRCA1) from the the Bayesian Compound
+Covariate method:
+
+```{r}
+res1$probNew[1:4,]
+```
+
+Note:
+
+|                              |                                                                                                                                                                                                                                                                                                                                                                             |
+|:----------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|   **res\$classifierTable**   | Data frame with composition of classifiers such as geometric means of values in each class, p-values and Gene IDs                                                                                                                                                                                                                                                           |
+|     **res\$probInClass**     | Data frame with predicted probability of each training sample belonging to a class during cross-validation from the Bayesian Compound Covariate                                                                                                                                                                                                                             |
+|     **res\$CCPSenSpec**      | Data frame with performance (i.e., sensitivity, specificity, positive prediction value, negative prediction value) of the Compound Covariate Predictor Classifier                                                                                                                                                                                                           |
+|     **res\$LDASenSpec**      | Data frame with performance (i.e., sensitivity, specificity, positive prediction value, negative prediction value) of the Diagonal Linear Discriminant Analysis Classifier.                                                                                                                                                                                                 |
+|     **res\$K1NNSenSpec**     | Data frame with performance (i.e., sensitivity, specificity, positive prediction value, negative prediction value) of the 1-Nearest Neighbor Classifier                                                                                                                                                                                                                     |
+|     **res\$K3NNSenSpec**     | Data frame with performance (i.e., sensitivity, specificity, positive prediction value, negative prediction value) of the 3-Nearest Neighbor Classifier                                                                                                                                                                                                                     |
+|   **res\$CentroidSenSpec**   | Data frame with performance (i.e., sensitivity, \* specificity, positive prediction value, negative \| prediction value) of the Nearest Centroid Classifier                                                                                                                                                                                                                 |
+|     **res\$SVMSenSpec**      | Data frame with performance (i.e., sensitivity, specificity, positive prediction value, negative prediction value) of the Support Vector Machine Classifier                                                                                                                                                                                                                 |
+|     **res\$BCPPSenSpec**     | Data frame with performance (i.e., sensitivity, specificity, positive prediction value, negative prediction value) of the Bayesian Compound Covariate Classifier                                                                                                                                                                                                            |
+|  **res\$weightLinearPred**   | Data frame with gene weights for linear predictors such \*\* as Compound Covariate Predictor, Diagonal Linear Discriminant Analysis and Support Vector Machine                                                                                                                                                                                                              |
+| **res\$thresholdLinearPred** | Contains the thresholds for the linear prediction rules related with res\$weightLinearPred. Each prediction rule is defined by the inner sum of the weights (wiwi) and log expression values (xixi) of significant genes. In this case, a sample is classified to the class BRCA1 if the sum is greater than the threshold; that is, ∑iwixi\>threshold∑iwixi\>threshold |
+|     **res\$GRPCentroid**     | Data frame with centroid of each class for each predictor gene                                                                                                                                                                                                                                                                                                              |
+|       **res\$pmethod**       | Vector of prediction methods that are specified                                                                                                                                                                                                                                                                                                                             |
+|      **res\$workPath**       | Path for Fortran and other intermediate outputs                                                                                                                                                                                                                                                                                                                             |
+
+## 5. Producing ROC Curves
+
+Cross-validation ROC curves are provided for Compound Covariate
+Predictor, Diagonal Linear Discriminant Analysis and Bayesian Compound
+Covariate Classifiers.
+
+```{r}
+plotROCCurve(res1,"ccp")
+
+```
+
+```{r}
+plotROCCurve(res1,"dlda")
+```
+
+```{r}
+plotROCCurve(res1,"bcc")
+```
